@@ -3,65 +3,72 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; worker-src 'self' blob:; form-action 'none'; base-uri 'none'">
-<title>VisaForm Japan</title>
-<link rel="stylesheet" href="styles.css">
-<script defer src="vendor/jszip.min.js"></script>
-<script defer src="vendor/pdf-lib.min.js"></script>
-<script type="module" src="app.js"></script>
+<title>Japan Visa Form Helper</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><div class="shell mast"><a href="./" class="brand"><span aria-hidden="true">▤</span> VisaForm Japan</a><a href="https://www.moj.go.jp/isa/applications/procedures/16-2.html" target="_blank" rel="noopener">Immigration Services Agency ↗</a></div></header>
-<main class="shell">
-<section class="hero">
-<div lang="ja" class="kicker">在留資格変更許可申請</div>
-<h1>Prepare your change<br class="wide"> of status application.</h1>
-<p>Download the official form, fill in your own copy, and save it as Excel or PDF.</p>
-</section>
-<section class="card" aria-labelledby="download-title">
-<h2 id="download-title">1. Download a blank form</h2>
-<p><span lang="ja">留学 → 技術・人文知識・国際業務</span><br>Student → Engineer / Specialist in Humanities / International Services</p>
-<div class="actions">
-<a class="button" href="https://www.moj.go.jp/isa/content/930004065.xlsx" target="_blank" rel="noopener">Download Excel</a>
-<a class="button secondary" href="https://www.moj.go.jp/isa/content/930004064.pdf" target="_blank" rel="noopener">Open PDF ↗</a>
+<div class="topbar no-print">
+  <div class="topbar-in">
+    <div class="logo">J</div>
+    <div class="brand">Visa Helper</div>
+    <div class="pill">🔒 Private: data stays on your device</div>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
 </div>
-<div class="references"><a href="https://www.moj.go.jp/isa/applications/status/gijinkoku.html#henkou" target="_blank" rel="noopener">Official form and requirements ↗</a><a href="https://www.moj.go.jp/isa/applications/procedures/16-2-1.html" target="_blank" rel="noopener">Forms for other statuses ↗</a></div>
-</section>
-<section class="card" aria-labelledby="edit-title">
-<h2 id="edit-title">2. Fill in your copy</h2>
-<p>Open a downloaded .xlsx or .pdf file. Your details stay in this tab until you download your edited copy. Download before closing or refreshing.</p>
-<label class="pick">Choose a form <input id="file" type="file" accept=".xlsx,.pdf"></label>
-<p id="status" role="status" aria-live="polite"></p>
-<div id="editor" hidden>
-<div class="editor-head"><h3 id="filename"></h3><button id="export" type="button">Download edited copy</button></div>
-<section id="pdf" hidden aria-label="PDF editor">
-<p>Tap or click a blank answer area to place text. Select any added text to edit or remove it.</p>
-<div class="actions pdf-controls"><button id="prev" type="button" class="secondary">Previous page</button><span id="page-label"></span><button id="next" type="button" class="secondary">Next page</button></div>
-<div class="scroll"><div id="paper"><canvas id="canvas" aria-label="Form page preview"></canvas><div id="overlay"></div></div></div>
-<form id="pdf-value" hidden>
-<label>Text <input id="pdf-text" maxlength="240" required></label>
-<label>Font size <input id="pdf-size" type="number" min="6" max="22" value="10" required></label>
-<div class="actions"><button>Apply text</button><button id="remove-mark" type="button" class="secondary">Remove</button><button id="cancel-mark" type="button" class="secondary">Cancel</button></div>
-</form>
-</section>
-<section id="excel" hidden aria-label="Excel editor">
-<p>Select a sheet and click an answer cell, or enter its address from Excel. The grid shows cell values and merged areas. Open the downloaded copy in Excel to review the official layout and print preview.</p>
-<label>Worksheet <select id="sheets"></select></label>
-<form id="excel-value">
-<label>Cell <input id="cell" placeholder="B12" maxlength="8" required></label>
-<label>Value <input id="cell-value" maxlength="32767"></label>
-<button>Apply value</button>
-</form>
-<div class="scroll grid"><table id="grid" aria-label="Worksheet cell values"></table></div>
-</section>
-</div>
-</section>
-<section class="card review">
-<h2>3. Review with your employer</h2>
-<p>Check the completed document against the official instructions. Ask your employer to complete the <span lang="ja">所属機関作成用</span> pages. Send the edited copy to your employer privately and follow the agency’s submission instructions.</p>
-</section>
+
+<header class="hero no-print">
+  <div class="hero-card">
+    <h1>Japan visa forms, made easy</h1>
+    <p>Fill in your details once, then download Excel or PDF in the same item order as the official
+       Change of Status of Residence or Extension of Period of Stay form (applicant, part 1).</p>
+  </div>
+</header>
+
+<main class="no-print">
+  <section class="card" id="official">
+    <div class="card-head"><div class="step">1</div><h2>Download the official form</h2></div>
+    <p>Always use the latest official file from the Immigration Services Agency (ISA). The form differs by
+       status of residence (Student, Dependent, Engineer/Specialist, etc.), so pick the one for your status.</p>
+    <ul class="links">
+      <li><a href="https://www.moj.go.jp/isa/content/930003874.pdf" target="_blank" rel="noopener">Change of Status of Residence – applicant, part 1 (official PDF, Form 30)</a></li>
+      <li><a href="https://www.isa.go.jp/en/applications/procedures/16-3-1.html" target="_blank" rel="noopener">Extension of Period of Stay – all forms (English page)</a></li>
+      <li><a href="https://www.moj.go.jp/isa/applications/procedures/16-3-1.html" target="_blank" rel="noopener">Extension of Period of Stay – all forms (Japanese page)</a></li>
+      <li><a href="https://www.moj.go.jp/isa/applications/procedures/16-3.html" target="_blank" rel="noopener">Procedure guide and required documents (multilingual)</a></li>
+      <li><a href="https://www.moj.go.jp/isa/applications/status/student.html" target="_blank" rel="noopener">Forms for the "Student" status</a></li>
+    </ul>
+    <p class="hint">For Student to work visa, you also need the part 2 form for your new job type and the employer's
+       forms. Find them on the ISA site (the English page above lists forms by status). Each ISA page offers the form as PDF and Excel. Apply before your period of stay expires
+       (from 3 months before).</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div class="step">2</div><h2>Fill in your details</h2></div>
+    <p class="hint">Write in English letters as shown in your passport. Your entries are saved automatically on this device.</p>
+    <form id="form" autocomplete="off"></form>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div class="step">3</div><h2>Download your data</h2></div>
+    <div class="buttons">
+      <button type="button" id="btnXlsx" class="green">Download Excel</button>
+      <button type="button" id="btnPdf">Save as PDF / Print</button>
+      <button type="button" id="btnSave" class="secondary">Save my data (.json)</button>
+      <label class="filebtn secondary">Load my data<input type="file" id="fileLoad" accept=".json,application/json" hidden></label>
+      <button type="button" id="btnClear" class="danger">Clear everything</button>
+    </div>
+    <p class="hint">Tip: for PDF choose "Save as PDF" in the print window. Use "Save my data" to keep a backup or move
+       to another device, and share the site link with friends: each person's data stays on their own device.</p>
+  </section>
 </main>
-<footer class="shell">Unofficial preparation tool for Japan’s change of status of residence application.</footer>
+
+<section id="sheet" aria-label="Application data sheet"></section>
+
+<footer class="no-print">
+  <p>Unofficial helper tool. It does not replace the official form: copy the values into the ISA form and check
+     them against the current ISA instructions before submitting.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
