@@ -47,8 +47,29 @@
     <form id="form" autocomplete="off"></form>
   </section>
 
+  <section class="card" id="fillcard">
+    <div class="card-head"><div class="step">3</div><h2>Fill your official Excel</h2></div>
+    <p class="hint">Upload the official Excel form you downloaded in step 1. The site writes your answers into it and
+       gives you the filled file. The file never leaves your device.</p>
+    <div class="buttons">
+      <label class="filebtn">1) Choose official Excel<input type="file" id="xlsIn" accept=".xlsx,.xlsm" hidden></label>
+      <button type="button" id="btnFill" class="green" disabled>2) Download filled Excel</button>
+    </div>
+    <p class="hint" id="xlsName">No file chosen.</p>
+    <div id="mapBox" style="display:none">
+      <h3>Where each answer goes</h3>
+      <p class="hint">The site guessed the cells. Check them and correct any that are wrong. Write the cell like <b>C5</b>
+         or <b>Sheet2!C5</b>. Leave a box empty to skip that answer.</p>
+      <div id="mapRows"></div>
+      <div class="buttons">
+        <button type="button" id="btnMapSave" class="secondary small">Save cell map (.json)</button>
+        <label class="filebtn secondary small">Load cell map<input type="file" id="mapLoad" accept=".json" hidden></label>
+      </div>
+    </div>
+  </section>
+
   <section class="card">
-    <div class="card-head"><div class="step">3</div><h2>Download your data</h2></div>
+    <div class="card-head"><div class="step">4</div><h2>Or download a simple data list</h2></div>
     <div class="buttons">
       <button type="button" id="btnXlsx" class="green">Download Excel</button>
       <button type="button" id="btnPdf">Save as PDF / Print</button>
@@ -69,6 +90,7 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -274,6 +274,113 @@
     data = { f: {}, fam: [], mode: modeOf() }; save(); renderForm();
   });
 
+
+  /* ---------- fill the official Excel (runs in the browser) ---------- */
+  const MAPKEY = 'visa-map-v1';
+  // English words printed on the official form, used to guess where each answer goes.
+  const HINTS = {
+    nationality: [/nationality/i], dob: [/date of birth/i], family: [/family name/i], given: [/given name/i],
+    sex: [/\bsex\b/i], birthplace: [/place of birth/i], marital: [/marital status/i], occupation: [/occupation/i],
+    homeaddr: [/home town|city in home country/i], jpaddr: [/address in japan/i],
+    tel: [/telephone number/i], mobile: [/cellular|mobile/i],
+    passno: [/passport/i], passexp: [/date of expiration/i, 0],
+    status: [/status of residence/i], period: [/period of stay/i], stayexp: [/date of expiration/i, 1],
+    rcno: [/residence card number/i], desired: [/desired length/i], newstatus: [/desired status/i],
+    newperiod: [/desired.*period|period of stay.*desired/i], reason: [/reason for/i],
+    crim: [/criminal record/i]
+  };
+  let wb = null;
+  let map = {};
+  try { map = JSON.parse(localStorage.getItem(MAPKEY)) || {}; } catch (e) { map = {}; }
+
+  function guess() {
+    const found = {};
+    const hits = [];
+    wb.eachSheet(ws => ws.eachRow(row => row.eachCell(c => {
+      if (typeof c.value === 'string' || (c.value && c.value.richText)) {
+        const t = typeof c.value === 'string' ? c.value : c.value.richText.map(r => r.text).join('');
+        hits.push({ ws, c, t });
+      }
+    })));
+    Object.keys(HINTS).forEach(key => {
+      const h = HINTS[key]; const rx = h[0]; const nth = h[1] || 0;
+      const m = hits.filter(x => rx.test(x.t));
+      const hit = m[Math.min(nth, m.length - 1)];
+      if (!hit) return;
+      const r = hit.c.row, startCol = hit.c.col;
+      for (let k = 1; k <= 14; k++) {
+        const n = hit.ws.getCell(r, startCol + k);
+        if (n.master.address === hit.c.master.address) continue;
+        if (n.value === null || n.value === undefined || n.value === '') {
+          found[key] = (hit.ws === wb.worksheets[0] ? '' : hit.ws.name + '!') + n.master.address; break;
+        }
+      }
+    });
+    return found;
+  }
+
+  function renderMap() {
+    const box = document.getElementById('mapRows'); box.innerHTML = '';
+    const g = document.createElement('div'); g.className = 'grid';
+    sections().forEach(sec => sec.fields.forEach(f => {
+      if (f.no === '-' || f.key === 'crimdetail') return;
+      const id = 'm_' + f.key;
+      const el = document.createElement('input'); el.id = id; el.placeholder = 'e.g. C5'; el.value = map[f.key] || '';
+      el.addEventListener('input', () => { map[f.key] = el.value.trim(); try { localStorage.setItem(MAPKEY, JSON.stringify(map)); } catch (e) {} });
+      g.appendChild(fieldWrap({ label: f.label, no: f.no }, el, id, true));
+    }));
+    box.appendChild(g);
+    document.getElementById('mapBox').style.display = 'block';
+  }
+
+  document.getElementById('xlsIn').addEventListener('change', async e => {
+    const file = e.target.files[0]; if (!file) return;
+    if (typeof ExcelJS === 'undefined') { alert('The Excel library could not be loaded. Check your internet connection.'); return; }
+    try {
+      wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await file.arrayBuffer());
+      document.getElementById('xlsName').textContent = 'Loaded: ' + file.name;
+      let pre = {};
+      try { const r = await fetch('mapping.json', { cache: 'no-store' }); if (r.ok) pre = await r.json(); } catch (x) { /* no preset map */ }
+      const g = guess();
+      Object.keys(g).forEach(k => { if (!map[k]) map[k] = g[k]; });
+      Object.keys(pre).forEach(k => { map[k] = pre[k]; });
+      renderMap();
+      document.getElementById('btnFill').disabled = false;
+    } catch (err) { wb = null; alert('Could not read that file. Please choose the .xlsx file from the ISA site.'); }
+  });
+
+  document.getElementById('btnFill').addEventListener('click', async () => {
+    if (!wb) return;
+    const missed = [];
+    sections().forEach(sec => sec.fields.forEach(f => {
+      const a = map[f.key]; const v = data.f[f.key];
+      if (!a || !v) return;
+      const parts = a.split('!'); const ws = parts.length > 1 ? wb.getWorksheet(parts[0]) : wb.worksheets[0];
+      if (!ws) { missed.push(f.label); return; }
+      ws.getCell(parts[parts.length - 1]).value = v;
+    }));
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = 'filled-' + (document.getElementById('xlsName').textContent.replace('Loaded: ', '') || 'form.xlsx');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    if (missed.length) alert('Sheet not found for: ' + missed.join(', '));
+  });
+
+  document.getElementById('btnMapSave').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(map, null, 2)], { type: 'application/json' }));
+    a.download = 'mapping.json'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  document.getElementById('mapLoad').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { map = JSON.parse(r.result); localStorage.setItem(MAPKEY, JSON.stringify(map)); renderMap(); } catch (x) { alert('Not a valid cell map file.'); } };
+    r.readAsText(f); e.target.value = '';
+  });
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
